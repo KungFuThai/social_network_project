@@ -3,56 +3,77 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Http\Traits\ResponseTrait;
 use App\Models\User;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 
 class FriendController extends Controller
 {
+    use ResponseTrait;
+
     public function getFriends()
     {
         $user = auth()->user();
         $friends = $user->allFriends()->toArray();
 
-        return response()->json([
-            'success' => true,
-            'message' => '',
-            'data' => $friends
-        ],200);
+        return $this->successResponse($friends);
+    }
+
+    public function friendRequests()
+    {
+        $user = auth()->user();
+
+        $friendRequests = $user->friendRequests()->orderBy('id', 'desc')->get();
+
+        return $this->successResponse($friendRequests);
+    }
+
+    public function suggestFriends()
+    {
+        $user = auth()->user();
+        $friendIds = $user->allFriends()->pluck('id')->toArray();
+        $friendIds[] = $user->id;
+        $suggestFriends = User::query()
+            ->whereNotIn('id', $friendIds)
+            ->inRandomOrder()
+            ->limit(8)
+            ->get();
+
+        return $this->successResponse($suggestFriends);
     }
 
     public function sendFriendRequest(User $user)
     {
-        $user->friends()->sync(auth()->id(),false);
+        $authUser = auth()->user();
+        $checkFriend = $authUser->friends()->where('friend_id', $user->id)->exists();
 
-        return response()->json([
-            'success'  => true,
-            'message' => 'Gửi lời mời kết bạn thành công! Chờ người này đồng ý!',
-            'data' => [],
-        ], 200);
-    }
+        if($checkFriend){
+            auth()->user()->friends()->updateExistingPivot($user, [
+                'status' => true,
+            ]);
 
-    public function reject(User $user)
-    {
-        $user->friends()->detach(auth()->user());
+            return $this->successResponse(message: 'Đồng ý kết bạn thành công!');
+        }
 
-        return response()->json([
-            'success'  => true,
-            'message' => 'Huỷ thành công!',
-            'data' => [],
-        ], 200);
+        $user->friends()->sync(auth()->id(), false);
+
+        return $this->successResponse(message: 'Gửi lời mời kết bạn thành công!');
     }
 
     public function accept(User $user)
     {
-        $user->friends()->updateExistingPivot(auth()->user(),[
+        auth()->user()->friends()->updateExistingPivot($user, [
             'status' => true,
         ]);
 
-        return response()->json([
-            'success'  => true,
-            'message' => 'Đồng ý kết bạn thành công!',
-            'data' => [],
-        ], 200);
+        return $this->successResponse(message: 'Đồng ý kết bạn thành công!');
+    }
+
+    public function reject(User $user)
+    {
+        auth()->user()->friends()->detach($user);
+
+        return $this->successResponse(message: 'Từ chối kết bạn thành công!');
     }
 }

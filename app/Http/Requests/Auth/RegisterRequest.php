@@ -46,6 +46,12 @@ class RegisterRequest extends FormRequest
                 'required',
                 'string',
             ],
+            'avatar' => [
+                'bail',
+                'sometimes',
+                'file',
+                'image',
+            ],
             'phone' => [
                 'bail',
                 'required',

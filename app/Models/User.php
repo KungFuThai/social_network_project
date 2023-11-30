@@ -37,26 +37,31 @@ class User extends Authenticatable
         return $this->belongsToMany(self::class, 'friends','user_id','friend_id')->withTimestamps();
     }
 
-    public function friendRequest(): BelongsToMany
+    public function friendRequests(): BelongsToMany
     {
-        return $this->belongsToMany(self::class, 'friends','user_id','friend_id')->wherePivot('status', $value = false);
+        return $this->belongsToMany(self::class, 'friends','user_id','friend_id')
+            ->wherePivot('status','=', false);
     }
 
     public function friendsOfThisUser()
     {
         return $this->belongsToMany(self::class, 'friends', 'user_id', 'friend_id')
-            ->wherePivot('status', '=', 1)
+            ->wherePivot('status', '=', true)
             ->withPivot('status');
     }
 
     public function thisUserFriendOf()
     {
         return $this->belongsToMany(self::class, 'friends', 'friend_id', 'user_id')
-            ->wherePivot('status', '=', 1)
+            ->wherePivot('status', '=', true)
             ->withPivot('status');
     }
     public function allFriends()
     {
         return $this->friendsOfThisUser->merge($this->thisUserFriendOf);
+    }
+    public function reactions()
+    {
+        return $this->hasMany(Reaction::class);
     }
 }

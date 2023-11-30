@@ -3,6 +3,7 @@
 use App\Http\Controllers\API\AuthController;
 use App\Http\Controllers\API\CommentController;
 use App\Http\Controllers\API\FriendController;
+use App\Http\Controllers\API\HomeController;
 use App\Http\Controllers\API\MessageController;
 use App\Http\Controllers\API\PostController;
 use App\Http\Controllers\API\ReactionController;
@@ -31,19 +32,22 @@ Route::post('login', [AuthController::class, 'login']);
 
 
 Route::group([
-    'middleware' => 'auth:sanctum',
+    'middleware' => ['api','auth:sanctum'],
 ], function () {
+    Route::get('get-auth', [AuthController::class, 'getAuth']);
     Route::post('logout', [AuthController::class, 'logout']);
 
+    //friend controller
     Route::get('friends', [FriendController::class, 'getFriends']);
+    Route::get('friend-request', [FriendController::class, 'friendRequests']);
+    Route::get('suggest-friends', [FriendController::class, 'suggestFriends']);
     Route::get('send-request-to/{user}', [FriendController::class, 'sendFriendRequest']);
-    Route::get('reject/{user}', [FriendController::class, 'reject']);
+    Route::post('reject/{user}', [FriendController::class, 'reject']);
     Route::post('accept/{user}', [FriendController::class, 'accept']);
 
     Route::group([
         'prefix' => 'posts'
     ], function () {
-        Route::get('/', [PostController::class, 'index']);
         Route::post('/add', [PostController::class, 'store']);
         Route::get('/{post}/edit', [PostController::class, 'edit']);
         Route::post('/{post}/edit', [PostController::class, 'update']);
@@ -53,20 +57,25 @@ Route::group([
     Route::group([
         'prefix' => 'comments'
     ], function () {
-        Route::get('/', [CommentController::class, 'index']);
+        Route::get('/{post}', [CommentController::class, 'index']);
         Route::post('/{post}/add', [CommentController::class, 'store']);
         Route::get('/{comment}/edit', [CommentController::class, 'edit']);
         Route::post('/{comment}/edit', [CommentController::class, 'update']);
-        Route::delete('/{post}', [CommentController::class, 'destroy']);
+        Route::delete('/{comment}', [CommentController::class, 'destroy']);
     });
 
-
+    //reaction controller
     Route::post('/reaction', [ReactionController::class, 'toggleReaction']);
 
     Route::group([
         'prefix' => 'messages'
     ], function () {
         Route::post('/{receiver_id?}', [MessageController::class, 'index']);
-        Route::post('/store', [MessageController::class, 'store']);
+        Route::post('/store/{receiver_id}', [MessageController::class, 'store']);
+        Route::post('/current_receiver/{user}', [MessageController::class, 'getCurrentReceiver']);
     });
+
+    //home controller
+    Route::get('/search', [HomeController::class, 'search']);
+    Route::get('/posts', [HomeController::class, 'getPosts']);
 });

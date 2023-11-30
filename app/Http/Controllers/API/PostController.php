@@ -5,85 +5,65 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Post\StoreRequest;
 use App\Http\Requests\Post\UpdateRequest;
+use App\Http\Traits\ImageStorageTrait;
+use App\Http\Traits\ResponseTrait;
 use App\Models\Post;
-use App\Models\User;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Storage;
 
 class PostController extends Controller
 {
-    public function index()
-    {
-        $posts = Post::all();
-
-        return response()->json([
-            'success' => true,
-            'message' => '',
-            'data' => $posts
-        ]);
-    }
+    use ResponseTrait;
+    use ImageStorageTrait;
 
     public function store(StoreRequest $request)
     {
         $userId = auth()->user()->id;
-        $path = Storage::disk('public')->putFile('posts', $request->file('image'));
-        $arr = $request->validated();
-        $arr['image'] = $path;
-        $arr['user_id'] = $userId;
-        Post::query()->create($arr);
+        $path = null;
+        if($request->has('image')){
+            $path = $this->storeImage('posts', $request->file('image'));
+        }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Tạo bài đăng thành công',
-            'data' => []
-        ]);
+        $postAttributes = $request->validated();
+        $postAttributes['image'] = $path;
+        $postAttributes['user_id'] = $userId;
+        Post::query()->create($postAttributes);
+
+        return $this->successResponse(message:  'Tạo bài đăng thành công');
     }
 
     public function edit(Post $post)
     {
-        return response()->json([
-            'success' => true,
-            'message' => '',
-            'data' => $post
-        ]);
+        if($post->user_id === auth()->user()->id){
+            return $this->successResponse($post);
+        }
+        return $this->errorResponse('Bài đăng này không phải của bạn!');
     }
-    public function update(StoreRequest $request, $postId)
+    public function update(UpdateRequest $request, $postId)
     {
-        $arr = $request->validated();
+        $postAttributes = $request->validated();
         $post = Post::query()->find($postId);
-
-        if ($request->hasFile('image')) {
-            $path = Storage::disk('public')->putFile('posts', $request->file('image'));
-
-            $arr['image'] = $path;
-
-            if (File::exists(public_path('storage/' . $post->image))) {
-                File::delete(public_path('storage/' . $post->image));
-            }
+        if ($post->user_id !== auth()->user()->id){
+            return $this->errorResponse('Bài đăng này không phải của bạn!');
         }
 
-        $post->update($arr);
+        if ($request->hasFile('image')) {
+            $path = $this->storeImage('posts', $request->file('image'));
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Cập nhật bài đăng thành công',
-            'data' => []
-        ]);
+            $postAttributes['image'] = $path;
+
+            $this->deleteImage($post->image);
+        }
+
+        $post->update($postAttributes);
+
+        return $this->successResponse(message:  'Cập nhật bài đăng thành công!');
     }
 
     public function destroy(Post $post)
     {
-        if (File::exists(public_path('storage/' . $post->image))) {
-            File::delete(public_path('storage/' . $post->image));
-        }
+        $this->deleteImage($post->image);
 
         $post->delete();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Xoá thành công',
-            'data' => []
-        ]);
+        return $this->successResponse(message: 'Xoá thành công!');
     }
 }
