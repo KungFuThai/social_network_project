@@ -6,7 +6,7 @@ import vuetify from 'vite-plugin-vuetify'
 export default defineConfig({
     plugins: [
         vue(),
-        vuetify(),
+        vuetify({autoImport: true}),
         laravel({
             input: ['resources/css/app.css', 'resources/js/app.js'],
             refresh: true,

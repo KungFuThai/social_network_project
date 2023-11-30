@@ -5,85 +5,58 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\RegisterRequest;
+use App\Http\Traits\ImageStorageTrait;
+use App\Http\Traits\ResponseTrait;
 use App\Models\User;
-use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Session;
 
 class AuthController extends Controller
 {
+    use ResponseTrait;
+    use ImageStorageTrait;
+    public function getAuth(){
+        return $this->successResponse(auth()->user());
+    }
     public function login(LoginRequest $request)
     {
         $credentials = [
             'email'    => $request->get('email'),
             'password' => $request->get('password'),
         ];
-        if(!Auth::attempt($credentials)){
-            return response()->json([
-                'success' => false,
-                'message' => 'Sai tên tài khoản hoặc mật khẩu!',
-                'data' => [],
-            ], 401);
+        if ( ! Auth::attempt($credentials)) {
+            return $this->errorResponse('Sai tên tài khoản hoặc mật khẩu');
         }
 
-        $user = User::query()->where('email',  $credentials['email'])->first();
+        $user = User::query()->where('email', $credentials['email'])->first();
 
         $token = $user->createToken("access_token")->plainTextToken;
 
-        return response()->json([
-            'status' => true,
-            'message' => 'Đăng nhập thành công!',
-            'token' => $token
-        ], 200);
+        return $this->successResponse($token, 'Đăng nhập thành công!');
     }
 
     public function register(RegisterRequest $request)
     {
-        try {
-            $user = User::query()->create([
-                'last_name'  => $request->get('last_name'),
-                'first_name' => $request->get('first_name'),
-                'phone' => $request->get('phone'),
-                'email'      => $request->get('email'),
-                'password'   => Hash::make($request->get('password')),
-            ]);
-
-            $token = $user->createToken('access_token')->plainTextToken;
-
-            $success = true;
-            $message = 'Đăng ký tài khoản thành công';
-        } catch (QueryException $e) {
-            $success = false;
-            $message = $e->getMessage();
+        $path = null;
+        if($request->has('avatar')){
+            $path = $this->storeImage('avatars', $request->file('avatar'));
         }
+        $userAttributes = $request->validated();
+        $userAttributes['avatar'] = $path;
+        $userAttributes['password'] = Hash::make($request->get('password'));
 
-        $response = [
-            'success' => $success,
-            'message' => $message,
-            'token' => $token,
-        ];
+        $user = User::query()->create($userAttributes);
 
-        return response()->json($response);
+        $token = $user->createToken('access_token')->plainTextToken;
+
+        return $this->successResponse($token, 'Đăng ký tài khoản thành công!');
     }
 
     public function logout(Request $request)
     {
-        try {
-            $request->user()->currentAccessToken()->delete();
-            $success = true;
-            $message = 'Đăng xuất thành công';
-        }catch (QueryException $e){
-            $success = false;
-            $message = $e->getMessage();
-        }
+        $request->user()->currentAccessToken()->delete();
 
-        $response = [
-            'success' => $success,
-            'message' => $message,
-        ];
-
-        return response()->json($response);
+        return $this->successResponse(message: 'Đăng xuất thành công!');
     }
 }
