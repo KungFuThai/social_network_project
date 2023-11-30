@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Events\SendMessage;
 use App\Http\Controllers\Controller;
+use App\Http\Traits\ResponseTrait;
 use App\Models\Message;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
@@ -11,6 +13,7 @@ use Illuminate\Support\Facades\DB;
 
 class MessageController extends Controller
 {
+    use ResponseTrait;
     public function index(Request $request, ?int $receiverId = null)
     {
         $messages = $receiverId === null ? [] : Message::query()
@@ -18,18 +21,36 @@ class MessageController extends Controller
                 ->whereIn('receiver_id', [$receiverId, $request->user()->id])
                 ->get();
 
-        return response()->json([
-            'success' => true,
-            'message' => '',
-            'data'    => [
-                'messages' => $messages,
-                'userList' => $this->userList(),
-            ],
+        return $this->successResponse([
+            'messages' => $messages,
+            'userList' => $this->userList(),
         ]);
+    }
+
+
+
+    public function store(Request $request, $receiverId = null)
+    {
+        if ($receiverId === null) {
+            return $this->errorResponse('Bạn muốn gửi tin nhắn cho ai?');
+        }
+        try {
+            $message = Message::query()
+                ->create([
+                    'sender_id'   => $request->user()->id,
+                    'receiver_id' => $receiverId,
+                    'message'     => $request->get('message'),
+                ]);
+            event(new SendMessage($message));
+            return $this->successResponse($message);
+        } catch (\Throwable $th) {
+            return $this->errorResponse(message: $th);
+        }
     }
 
     private function userList()
     {
+        //đặt lại chế độ làm việc của sql thành chuỗi rỗng vì ảnh hưởng của câu groupby
         DB::statement("SET SESSION sql_mode=''");
         $senderId = auth()->user()->id;
 
@@ -45,58 +66,57 @@ class MessageController extends Controller
         return $this->getFilterRecentMessages($recentMessages, $senderId);
     }
 
+//    private function getFilterRecentMessages(Collection $recentMessages, int $senderId)
+//    {
+//        $recentUserWithMessage = [];
+//        $usedUserIds = [];
+//        foreach ($recentMessages as $message) {
+//            $userId = $message->sender_id === $senderId ? $message->receiver_id : $message->sender_id;
+//            if ( ! in_array([$userId, $usedUserIds], $recentUserWithMessage,true)) {
+//                $recentUserWithMessage[] = [
+//                    'user_id' => $userId,
+//                    'message' => $message->message
+//                ];
+//                $usedUserIds = $userId;
+//            }
+//        }
+//        foreach ($recentUserWithMessage as $key => $userMessage) {
+//            $recentUserWithMessage[$key]['info'] = User::query()
+//                ->where('id', $userMessage['user_id'])
+//                ->get(['last_name', 'first_name', 'avatar']);
+//        }
+//
+//        return $recentUserWithMessage;
+//    }
     private function getFilterRecentMessages(Collection $recentMessages, int $senderId)
     {
         $recentUserWithMessage = [];
         $usedUserIds = [];
+
         foreach ($recentMessages as $message) {
             $userId = $message->sender_id === $senderId ? $message->receiver_id : $message->sender_id;
-            if(! in_array([$userId, $usedUserIds], $recentUserWithMessage, true)){
-                $recentUserWithMessage[]=[
+
+            if (!in_array($userId, $usedUserIds)) {
+                $recentUserWithMessage[] = [
                     'user_id' => $userId,
                     'message' => $message->message
                 ];
-                $usedUserIds = $userId;
+
+                $usedUserIds[] = $userId;
             }
         }
-        foreach($recentUserWithMessage as $key => $userMessage){
+
+        foreach ($recentUserWithMessage as $key => $userMessage) {
             $recentUserWithMessage[$key]['info'] = User::query()
-                    ->where('id', $userMessage['user_id'])
-                    ->get(['last_name', 'first_name', 'avatar']);
+                ->where('id', $userMessage['user_id'])
+                ->get(['last_name', 'first_name', 'avatar']);
         }
+
         return $recentUserWithMessage;
     }
 
-    public function store(Request $request, ?int $receiverId = null)
+    public function getCurrentReceiver(User $user)
     {
-        if ($receiverId === null) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Bạn muốn gửi tin nhắn cho ai?',
-                'data'    => [],
-            ]);
-        }
-
-        try {
-            $message = Message::query()
-                ->create([
-                    'sender_id'   => $request->user()->id,
-                    'receiver_id' => $receiverId,
-                    'message'     => $request->get('message'),
-                ]);
-
-            return response()->json([
-                'success' => true,
-                'message' => '',
-                'data'    => $message,
-            ]);
-        } catch (\Throwable $th) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Lỗi rồi!',
-                'data'    => [],
-            ]);
-        }
+        return $this->successResponse($user);
     }
-
 }

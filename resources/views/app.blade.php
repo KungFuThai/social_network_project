@@ -7,22 +7,8 @@
     <title>{{ config('app.name') }}</title>
 </head>
 <body>
-@if(auth()->check())
-    <script>
-        window.Laravel = {!! json_encode([
-            'isLoggedIn' => true,
-            'user'       => auth()->user(),
-        ], JSON_THROW_ON_ERROR) !!}
-    </script>
-@else
-    <script>
-        window.Laravel = {!! json_encode([
-            'isLoggedIn' => false,
-        ], JSON_THROW_ON_ERROR) !!}
-    </script>
-@endif
-    <div id="app"></div>
-    <script src="http://localhost:6001/socket.io/socket.io.js"></script>
-    @vite('resources/js/app.js')
+<div id="app"></div>
+{{--<script src="http://localhost:6001/socket.io/socket.io.js"></script>--}}
+@vite('resources/js/app.js')
 </body>
 </html>
