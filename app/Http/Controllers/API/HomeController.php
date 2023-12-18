@@ -11,20 +11,21 @@ use Illuminate\Http\Request;
 class HomeController extends Controller
 {
     use ResponseTrait;
+
     public function search(Request $request)
     {
         $search = $request->get('search');
 
         $data = User::query()
             ->where(function ($query) use ($search) {
-                $query->where('first_name', 'like', '%' . $search . '%')
-                    ->orWhere('first_name', 'like', $search . '%')
-                    ->orWhere('last_name', 'like', '% ' . $search . '%')
-                    ->orWhere('last_name', 'like', $search . '%')
-                    ->orWhere('email', 'like', '% ' . $search . '%')
-                    ->orWhere('email', 'like', $search . '%')
-                    ->orWhere('phone', 'like', '%' . $search . '%')
-                    ->orWhere('phone', 'like', $search . '%');
+                $query->where('first_name', 'like', '%'.$search.'%')
+                    ->orWhere('first_name', 'like', $search.'%')
+                    ->orWhere('last_name', 'like', '% '.$search.'%')
+                    ->orWhere('last_name', 'like', $search.'%')
+                    ->orWhere('email', 'like', '% '.$search.'%')
+                    ->orWhere('email', 'like', $search.'%')
+                    ->orWhere('phone', 'like', '%'.$search.'%')
+                    ->orWhere('phone', 'like', $search.'%');
             })
             ->limit(10)
             ->get();
@@ -32,8 +33,10 @@ class HomeController extends Controller
         return $this->successResponse($data);
     }
 
-    public function getPosts(){
+    public function getPosts()
+    {
         $posts = Post::query()
+            ->where('status', true)
             ->withCount('likes')
             ->withCount('dislikes')
             ->withCount('comments')
