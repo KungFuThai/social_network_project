@@ -4,7 +4,8 @@
       <v-scroll-y-transition>
         <div class="v-list bg-white">
           <v-list v-for="user in userList">
-            <v-list-item link height="60px" @click="getMessage(parseInt(user.user_id))">
+            <v-list-item link height="60px" @click="setReceiver(user.user_id)">
+              <!--            <v-list-item link height="60px" @click="getMessage(parseInt(user.user_id))">-->
               <v-list v-for="info in user.info">
                 <VAvatar>
                   <img
@@ -42,7 +43,7 @@
             />
           </v-avatar>
           <span class="pl-1">
-              {{ this.getFullName(currentReceiver.last_name, currentReceiver.first_name) }}
+              {{ this.getFullName(currUser.last_name, currUser.first_name) }}
             </span>
         </v-row>
       </div>
@@ -65,11 +66,11 @@
             </div>
 
             <div class="d-flex flex-row-reverse bg-variant" v-else>
-              <v-card max-width="50%" width="fit-content" variant="tonal">
+              <v-card max-width="50%" width="fit-content" variant="tonal" color="lightblue">
                 <v-card-item>
-                  <div>
+                  <div class="text-black">
                     <div class="text-overline">
-                      {{ this.getFullName(currentUser.last_name, currentUser.first_name) }}
+                      {{ this.getFullName(currUser.last_name, currUser.first_name) }}
                     </div>
                     <div class="text-h6 mb-1">{{ mes.message }}</div>
                     <div class="text-muted">{{ formatDate(mes.created_at) }}</div>
@@ -112,22 +113,30 @@ import moment from 'moment';
 
 export default {
   props: {
-    currentUser: Object,
+    currentUser: {
+      type: Object,
+    },
     token: String,
+    id: String,
   },
   name: "ChatLayout",
   data() {
     return {
       message: "",
-      receiverId: null,
+      receiverId: Number,
       userList: {},
       // token: localStorage.getItem('token'),
       messages: [],
       socket: null,
       currentReceiver: {},
+      currUser: {},
     }
   },
+  created() {
+      this.currUser = this.currentUser
+  },
   mounted() {
+    this.receiverId = this.id
     this.socket = io('http://localhost:3000');
     window.axios.defaults.headers.common['Authorization'] = `Bearer ${this.token}`
     this.$axios.post('/api/messages')
@@ -139,13 +148,12 @@ export default {
         })
 
     this.socket.on('connect', () => {
-      this.socket.emit('user_connected', this.currentUser.id);
+      this.socket.emit('user_connected', this.currUser.id);
     })
 
     this.socket.on("private-channel:App\\Events\\SendMessage", (message) => {
       this.messages.push(message)
     });
-
   },
   watch: {
     messages: {
@@ -155,16 +163,38 @@ export default {
         }, 1);
       },
       deep: true
-    }
+    },
+    receiverId: {
+      handler(newValue, oldValue) {
+        setTimeout(() => {
+          this.getMessage(this.id)
+        }, 1000)
+      },
+      deep: true
+    },
+    id: {
+      handler(newValue, oldValue) {
+        this.getMessage(this.id)
+      },
+      deep: true
+    },
   },
   methods: {
+    async getAuth() {
+      try {
+        const response = await axios.get('/api/get-auth');
+        this.currUser = response.data.data;
+      } catch (error) {
+        console.log(error);
+      }
+    },
     getFullName(lastName, firstName) {
       return lastName + " " + firstName
     },
     async sendMessage() {
       if (this.message === '') return;
       if (this.receiverId === null) return;
-      await axios.post(`api/messages/store/${this.receiverId}`, {
+      await axios.post(`/api/messages/store/${this.receiverId}`, {
         message: this.message
       })
           .then((response) => {
@@ -177,22 +207,15 @@ export default {
       await axios.post(`/api/messages/${receiverId}`)
           .then(response => {
             this.messages = response.data.data.messages;
+            this.currentReceiver = response.data.data.receiver
           })
-      await this.$nextTick(() => {
-        this.getCurrentReceiver()
-      })
       await this.$nextTick(() => {
         this.scrollToBottomOfCard();
+      }).catch((error) => {
+        $this.router.push('/')
       });
     },
-    getCurrentReceiver() {
-      this.$axios.post(`api/messages/current_receiver/${this.receiverId}`)
-          .then(response => {
-            this.currentReceiver = response.data.data
-          })
-    },
     scrollToBottomOfCard() {
-      console.log('Scrolling to bottom...');
       let element = document.querySelector('#chat-box');
       if (element) {
         element.scrollTo({
@@ -204,11 +227,14 @@ export default {
     formatDate(value) {
       return moment(String(value)).format('hh:mm DD/MM/YYYY')
     },
-    getImageSrc(image){
-      if(image === null || image === ''){
+    getImageSrc(image) {
+      if (image === null || image === '') {
         return 'https://images.unsplash.com/photo-1549068106-b024baf5062d?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=634&q=80'
       }
-      return 'http://social_network_project.test/storage/'+ image
+      return '/storage/' + image
+    },
+    setReceiver(receiverId) {
+      this.$router.push(`/messages/${receiverId}`)
     }
   },
 }

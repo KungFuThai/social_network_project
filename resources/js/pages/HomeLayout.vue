@@ -1,5 +1,5 @@
 <template>
-  <MainNav></MainNav>
+  <MainNav :currentUser="currentUser"></MainNav>
   <PostSection :token="token" :currentUser="currentUser"></PostSection>
   <RightSideBar :token="token"></RightSideBar>
 </template>

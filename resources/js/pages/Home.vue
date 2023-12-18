@@ -25,20 +25,14 @@ export default {
   },
   created() {
     window.axios.defaults.headers.common['Authorization'] = `Bearer ${this.token}`
-    axios.get('api/get-auth')
-        .then((response) => {
-          this.currentUser = response.data.data;
-        })
-        .catch((errors) => {
-          console.log(errors);
-        });
+    this.getAuth()
   },
   mounted() {
     this.socket = io('http://localhost:3000');
-
-    this.socket.on('connect', () => {
-      this.socket.emit('user_connected', this.currentUser.id);
-    })
+    // //
+    // this.socket.on('connect', () => {
+    //   this.socket.emit('user_connected', this.currentUser.id);
+    // })
     // this.socket.on('updateUserStatus', (data) => {
     //   this.userStatus = data.status;
     // })
@@ -47,6 +41,16 @@ export default {
     //   console.log(message);
     // });
 
+  },
+  methods: {
+    async getAuth() {
+      try {
+        const response = await axios.get('/api/get-auth');
+        this.currentUser = response.data.data;
+      } catch (error) {
+        console.log(error);
+      }
+    },
   },
   components: {
     ChatLayout,

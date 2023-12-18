@@ -3,6 +3,7 @@ import { createWebHistory, createRouter } from 'vue-router';
 import Home from '../pages/Home.vue';
 import Register from '../pages/Register.vue';
 import Login from '../pages/Login.vue';
+import Forget from '../pages/Forget.vue';
 import Chat from '../pages/ChatLayout.vue';
 import HomeLayout from "../pages/HomeLayout.vue";
 import Profile from "../pages/ProfilePage.vue";
@@ -17,16 +18,19 @@ export const routes = [
             {
                 path: '/',
                 name: '',
+                props: true,
                 component: HomeLayout
             },
             {
-                path: '/messages',
+                path: '/messages/:id?',
                 name: 'messages',
+                props: true,
                 component: Chat
             },
             {
-                path: '/profile',
+                path: '/profile/:id',
                 name: 'profile',
+                props: true,
                 component: Profile
             },
         ]
@@ -41,6 +45,12 @@ export const routes = [
         name: 'login',
         path: '/login',
         component: Login,
+        meta: {guest: true}
+    },
+    {
+        name: 'forget',
+        path: '/forget',
+        component: Forget,
         meta: {guest: true}
     },
 ]

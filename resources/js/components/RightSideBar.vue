@@ -3,7 +3,11 @@
     <VListItem title="Lời mời kết bạn"></VListItem>
     <VDivider></VDivider>
     <v-card class="overflow-y-auto" height="40%" :elevation="0">
-      <VListItem v-if="Object.keys(friendRequests).length !== 0" v-for="(friendRequest, index) in friendRequests">
+      <VListItem
+          :elevation="1"
+          rounded="lg"
+          v-if="Object.keys(friendRequests).length !== 0" v-for="(friendRequest, index) in friendRequests"
+      >
         <div class="d-flex justify-space-between align-center">
           <VBtn link variant="text">
             <VAvatar size="30" class="mr-1">
@@ -77,7 +81,7 @@ export default {
   },
   methods: {
     async getFriendRequests() {
-      await axios.get(`api/friend-request`)
+      await axios.get(`/api/friend-request`)
           .then((response) => {
             this.friendRequests = response.data.data
           })
@@ -86,7 +90,7 @@ export default {
           });
     },
     async getFriendSuggests() {
-      await axios.get(`api/suggest-friends`)
+      await axios.get(`/api/suggest-friends`)
           .then((response) => {
             this.suggestFriends = response.data.data
           })
@@ -101,21 +105,25 @@ export default {
       if (image === null || image === '') {
         return 'https://images.unsplash.com/photo-1549068106-b024baf5062d?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=634&q=80'
       }
-      return 'http://social_network_project.test/storage/' + image
+      return '/storage/' + image
     },
     async sendRequest(id, index) {
-      await axios.get(`api/send-request-to/${id}`)
+      await axios.post(`/api/send-request-to/${id}`)
           .then((response) => {
             this.notification = response.data.message;
             this.snackbar = true;
             this.suggestFriends.splice(index, 1);
           })
           .catch((error) => {
+            if (error.response.data.success === false) {
+              this.message = error.response.data.message
+              this.snackbar = true;
+            }
             console.log(error)
           });
     },
     async accept(id, index) {
-      await axios.post(`api/accept/${id}`)
+      await axios.post(`/api/accept/${id}`)
           .then((response) => {
             this.notification = response.data.message;
             this.snackbar = true;
@@ -126,7 +134,7 @@ export default {
           });
     },
     async reject(id, index) {
-      await axios.post(`api/reject/${id}`)
+      await axios.post(`/api/reject/${id}`)
           .then((response) => {
             this.notification = response.data.message;
             this.snackbar = true;

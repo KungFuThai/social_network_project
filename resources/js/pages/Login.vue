@@ -7,15 +7,23 @@
         </div>
         <v-text-field v-model="formData.email" label="Email" :error-messages="errors.email"
                       hide-details="auto"></v-text-field>
-
-        <v-text-field v-model="formData.password" label="Mật khẩu" :error-messages="errors.password"
-                      hide-details="auto"></v-text-field>
-        <a href="#" class="text-body-2 font-weight-regular">Quên mật khẩu?</a>
-        <v-btn type="submit" color="lightblue" block class="mt-2" @click="snackbar = true">Đăng nhập</v-btn>
+        <v-text-field
+            :type="showPassword ? 'text' : 'password'"
+            :append-inner-icon="showPassword ? 'mdi-eye-off' : 'mdi-eye'"
+            @click:append-inner="showPassword = !showPassword"
+            v-model="formData.password"
+            label="Mật khẩu"
+            :error-messages="errors.password"
+            hide-details="auto"
+        ></v-text-field>
+        <router-link :to="`/forget`" class="text-body-2 font-weight-regular">Quên mật khẩu?</router-link>
+        <v-btn type="submit" color="lightblue" block class="mt-2">Đăng nhập</v-btn>
 
       </v-form>
       <div class="mt-2">
-        <p class="text-body-2">Không có tài khoản? <a href="#">Đăng ký</a></p>
+        <p class="text-body-2">Không có tài khoản?
+          <router-link :to="`/register`">Đăng ký</router-link>
+        </p>
       </div>
     </v-sheet>
   </div>
@@ -34,6 +42,7 @@ export default {
   name: "Login.vue",
   data() {
     return {
+      showPassword: false,
       snackbar: false,
 
       formData: {
@@ -49,12 +58,14 @@ export default {
   },
   methods: {
     login() {
-      axios.post('api/login', this.formData).then((response) => {
-        localStorage.setItem('token', response.data.data);
-        this.$router.push('/')
-      }).catch((errors) => {
+      axios.post('/api/login', this.formData)
+          .then((response) => {
+            localStorage.setItem('token', response.data.data);
+            this.$router.push('/')
+          }).catch((errors) => {
         if (errors.response.data.success === false) {
           this.message = errors.response.data.message
+          this.snackbar = true
         } else {
           this.errors = errors.response.data.errors
         }
