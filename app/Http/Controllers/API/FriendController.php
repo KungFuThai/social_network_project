@@ -46,14 +46,9 @@ class FriendController extends Controller
     public function sendFriendRequest(User $user)
     {
         $authUser = auth()->user();
-        $checkFriend = $authUser->friends()->where('friend_id', $user->id)->exists();
-
-        if($checkFriend){
-            auth()->user()->friends()->updateExistingPivot($user, [
-                'status' => true,
-            ]);
-
-            return $this->successResponse(message: 'Đồng ý kết bạn thành công!');
+        $checkFriendTo = $authUser->friends()->where('friend_id', $user->id)->exists();
+        if($checkFriendTo){
+            return $this->errorResponse("Đã là bạn bè với người này!");
         }
 
         $user->friends()->sync(auth()->id(), false);
@@ -72,8 +67,25 @@ class FriendController extends Controller
 
     public function reject(User $user)
     {
-        auth()->user()->friends()->detach($user);
+        $checkFriendTo = auth()->user()->friends()->where('friend_id', $user->id)->exists();
+//        $checkFriendFrom = $user->friends()->where('friend_id', $authUser->id)->exists();
+        if($checkFriendTo){
+            auth()->user()->friends()->detach($user);
 
-        return $this->successResponse(message: 'Từ chối kết bạn thành công!');
+            return $this->successResponse(message: 'Từ chối kết bạn thành công!');
+        }
+
+        $user->friends()->detach(auth()->user()->id);
+
+        return $this->successResponse("Xoá kết bạn thành công!");
+    }
+
+    public function remove(User $user)
+    {
+        $authUser = auth()->user();
+
+        $user->friends()->detach($authUser);
+
+        return $this->successResponse(message: "Thu hồi kết bạn thành công!");
     }
 }
