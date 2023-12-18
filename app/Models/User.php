@@ -24,12 +24,10 @@ class User extends Authenticatable
         'address',
         'email',
         'password',
-        'remember_token',
     ];
 
     protected $hidden = [
         'password',
-        'remember_token',
     ];
 
     public function friends(): BelongsToMany
@@ -40,6 +38,11 @@ class User extends Authenticatable
     public function friendRequests(): BelongsToMany
     {
         return $this->belongsToMany(self::class, 'friends','user_id','friend_id')
+            ->wherePivot('status','=', false);
+    }
+    public function requestFriends(): BelongsToMany
+    {
+        return $this->belongsToMany(self::class, 'friends','friend_id','user_id')
             ->wherePivot('status','=', false);
     }
 
