@@ -30,7 +30,6 @@ class UpdateRequest extends FormRequest
             'image' => [
                 'bail',
                 'sometimes',
-                'file',
                 'image',
             ],
             'status' => [
