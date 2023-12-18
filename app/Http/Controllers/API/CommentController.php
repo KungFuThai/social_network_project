@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 class CommentController extends Controller
 {
     use ResponseTrait;
+
     public function index(Post $post)
     {
         $comments = Comment::query()
@@ -26,16 +27,20 @@ class CommentController extends Controller
 
     public function store(StoreRequest $request, $postId)
     {
-        if(Post::query()->where('id',$postId)->exists()){
+        if (Post::query()->where('id', $postId)->exists()) {
             $userId = auth()->user()->id;
-            $comment = $request->get('comment');
-            Comment::query()->create([
-                'comment' => $comment,
+            $comment = Comment::query()->create([
+                'comment' => $request->get('comment'),
                 'user_id' => $userId,
                 'post_id' => $postId,
             ]);
 
-            return $this->successResponse(message: 'Bình luận thành công!');
+            $data = Comment::query()
+                ->where('id',$comment->id)
+                ->with('user')
+                ->get();
+
+            return $this->successResponse($data, 'Bình luận thành công!');
         }
 
         return $this->errorResponse(message: 'Bài đăng đã được xoá hoặc không tồn tại!');
@@ -45,7 +50,7 @@ class CommentController extends Controller
     {
         $userId = auth()->user()->id;
 
-        if($userId === $comment->user_id){
+        if ($userId === $comment->user_id) {
             return $this->successResponse($comment);
         }
 
@@ -57,10 +62,15 @@ class CommentController extends Controller
         $userId = auth()->user()->id;
         $comment = Comment::query()->find($commentId);
 
-        if($userId === $comment->user_id){
-            $data = $comment->update([
+        if ($userId === $comment->user_id) {
+            $comment->update([
                 'comment' => $request->get('comment'),
             ]);
+
+            $data = Comment::query()
+                ->where('id', $comment->id)
+                ->with('user')
+                ->get();
 
             return $this->successResponse($data, 'Cập nhật bình luận thành công!');
         }
@@ -76,10 +86,10 @@ class CommentController extends Controller
         $isPostOwner = $post->user_id === $userId;
         $isCommentOwner = $userId === $comment->user_id;
 
-        if($isCommentOwner || $isPostOwner){
+        if ($isCommentOwner || $isPostOwner) {
             $comment->delete();
 
-            return $this->successResponse('Xoá bình luận thành công!');
+            return $this->successResponse(-1,'Xoá bình luận thành công!');
         }
 
         return $this->errorResponse(message: 'Bình luận này là của người khác!');
