@@ -20,6 +20,8 @@ return [
         'localhost,localhost:3000,127.0.0.1,127.0.0.1:8000,::1',
         Sanctum::currentApplicationUrlWithPort()
     ))),
+//không nên làm như vầy điều này tạm thời mở để sử dụng ngrok không gặp vấn đề
+//    'stateful' => ['*'],
 
     /*
     |--------------------------------------------------------------------------
