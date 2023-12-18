@@ -55,7 +55,6 @@ class RegisterRequest extends FormRequest
             'phone' => [
                 'bail',
                 'required',
-                'string',
                 'numeric',
                 'regex:/(0)[0-9]{9}/',
                 'digits:10',
@@ -82,7 +81,7 @@ class RegisterRequest extends FormRequest
             'required'   => ':attribute bắt buộc phải điền!',
             'string'   => ':attribute phải là một chuỗi',
             'numeric'   => ':attribute phải là số',
-            'regex'   => ':attribute phải đúng định dạng bắt đầu bằng số 0',
+            'regex'   => ':attribute phải đúng định dạng bắt đầu bằng số 0 và đủ 10 số',
             'digits'   => ':attribute phải đủ 10 số',
         ];
     }
