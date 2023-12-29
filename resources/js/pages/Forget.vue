@@ -47,7 +47,7 @@
       :timeout=2000
       color="green"
   >
-    {{ message }}
+    {{ snackbarMess }}
   </v-snackbar>
 </template>
 

@@ -41,6 +41,7 @@ io.on('connection', (socket) => {
     socket.on('user_connected', (userId) => {
         users[userId] = socket.id;
         io.emit('updateUserStatus', users);
+        console.log(users)
         console.log('user_connected ' + userId);
     });
 

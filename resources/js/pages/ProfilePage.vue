@@ -108,8 +108,8 @@
                               >
                                 <v-radio-group inline label="Giới tính" v-model="formData.gender"
                                                :error-messages="errors.gender">
-                                  <v-radio label="Nam" :value="0"></v-radio>
-                                  <v-radio label="Nữ" :value="1"></v-radio>
+                                  <v-radio label="Nam" :value="1"></v-radio>
+                                  <v-radio label="Nữ" :value="0"></v-radio>
                                 </v-radio-group>
                               </v-col>
                               <v-col
@@ -202,7 +202,7 @@
                               <v-btn
                                   color="red"
                                   rounded
-                                  @click="forceDeletePost(trashPost.id)"
+                                  @click="forceDeletePost(trashPost.id, index)"
                               >
                                 <v-icon>
                                   mdi-delete
@@ -433,7 +433,7 @@ export default {
           });
     },
     getImage(image) {
-      return 'http://social_network_project.test/storage/' + image
+      return '/storage/' + image
     },
     getFullName(lastName, firstName) {
       return lastName + " " + firstName;
@@ -442,7 +442,7 @@ export default {
       if (image === null || image === '') {
         return 'https://images.unsplash.com/photo-1549068106-b024baf5062d?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=634&q=80'
       }
-      return 'http://social_network_project.test/storage/' + image
+      return '/storage/' + image
     },
     formatDate(value) {
       if (value) {
@@ -458,7 +458,7 @@ export default {
     },
     getGender(gender) {
       if (gender !== null) {
-        return gender === 0 ? 'Nam' : 'Nữ'
+        return gender === 1 ? 'Nam' : 'Nữ'
       }
       return 'Không có thông tin'
     },
@@ -583,6 +583,8 @@ export default {
       axios.post('/api/profile/user/update', formData)
           .then((response) => {
             this.info = response.data.data
+            this.notification = response.data.message;
+            this.snackbar = true;
           })
           .catch((errors) => {
             this.errors = errors.response.data.errors
@@ -600,16 +602,20 @@ export default {
     async restorePost(id){
       await axios.post(`/api/trash-bin/restore/${id}`)
           .then((response) => {
+            this.notification = response.data.message;
+            this.snackbar = true;
             window.location.reload()
           })
           .catch((error) => {
             console.log(error)
           });
     },
-    async forceDeletePost(id){
+    async forceDeletePost(id, index){
       await axios.delete(`/api/trash-bin/${id}`)
           .then((response) => {
-            window.location.reload()
+            this.trashPosts.splice(index, 1)
+            this.notification = response.data.message;
+            this.snackbar = true;
           })
           .catch((error) => {
             console.log(error)

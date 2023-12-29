@@ -526,6 +526,8 @@ export default {
       axios.post(`/api/posts/${postId}/edit`, formData)
           .then((response) => {
             let responseData = response.data.data;
+            this.message = response.data.message;
+            this.snackbar = true;
             if (responseData.status == 1) {
               for (let i = 0; i < responseData.length; i++) {
                 this.posts.splice(this.postIndex + i, 1, responseData[i]);

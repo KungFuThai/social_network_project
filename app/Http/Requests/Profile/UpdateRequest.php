@@ -97,6 +97,7 @@ class UpdateRequest extends FormRequest
             'digits'   => ':attribute phải đủ 10 số',
             'file'   => ':attribute phải là tập tin',
             'image'   => ':attribute phải là ảnh',
+            'before' => ':attribute phải trước ngày hôm nay'
         ];
     }
 }

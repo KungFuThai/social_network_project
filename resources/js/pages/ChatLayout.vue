@@ -39,11 +39,11 @@
                 width="40"
                 height="50"
                 cover
-                :src="'http://social_network_project.test/storage/'+ currentReceiver.avatar"
+                :src="getImage(currentReceiver.avatar)"
             />
           </v-avatar>
           <span class="pl-1">
-              {{ this.getFullName(currUser.last_name, currUser.first_name) }}
+              {{ this.getFullName(currentReceiver.last_name, currentReceiver.first_name) }}
             </span>
         </v-row>
       </div>
@@ -137,7 +137,8 @@ export default {
   },
   mounted() {
     this.receiverId = this.id
-    this.socket = io('http://localhost:3000');
+    // this.socket = io('http://localhost:3000');
+    this.socket = io('https://4ead-14-237-246-92.ngrok-free.app/');
     window.axios.defaults.headers.common['Authorization'] = `Bearer ${this.token}`
     this.$axios.post('/api/messages')
         .then(response => {
@@ -235,7 +236,10 @@ export default {
     },
     setReceiver(receiverId) {
       this.$router.push(`/messages/${receiverId}`)
-    }
+    },
+    getImage(image) {
+      return '/storage/' + image
+    },
   },
 }
 </script>

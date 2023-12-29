@@ -86,7 +86,9 @@ class MessageController extends Controller
         }
 
         foreach ($recentUsersWithMessage as $key => $userMessage) {
-            $recentUsersWithMessage[$key]['info'] = User::query()->where('id', $userMessage['user_id'])->get(['last_name', 'first_name', 'avatar']);
+            $recentUsersWithMessage[$key]['info'] = User::query()
+                ->where('id', $userMessage['user_id'])
+                ->get(['last_name', 'first_name', 'avatar']);
         }
 
         return $recentUsersWithMessage;
